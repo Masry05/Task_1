@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { Perk } from '../models/Perk.js';
+import {updatePerkSchema} from "../Validate/perkValidation.js"
 
 // validation schema for creating/updating a perk
 const perkSchema = Joi.object({
@@ -68,10 +69,24 @@ export async function createPerk(req, res, next) {
   }
 }
 // TODO
-// Update an existing perk by ID and validate only the fields that are being updated 
+// Update an existing perk by ID and validate only the fields that are being updated
 export async function updatePerk(req, res, next) {
-  
+  try {
+    const perk = await Perk.findById(req.params.id);
+    if (!perk) return res.status(404).json({ message: 'Perk not found' });
+
+    const { error, value } = updatePerkSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
+
+    Object.assign(perk, value);
+    await perk.save();
+
+    res.json(perk);
+  } catch (err) {
+    next(err); // pass to error handler
+  }
 }
+
 
 
 // Delete a perk by ID
